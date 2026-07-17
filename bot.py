@@ -354,7 +354,20 @@ def get_final_links_with_sponsors():
         })
 
     return final_links
+def build_subscription_message():
+    final_links = get_final_links_with_sponsors()
 
+    if final_links:
+        links_text = build_clickable_links_text(final_links)
+    else:
+        links_text = "Список ссылок пока пуст."
+
+    text = (
+        "👇 Сначала подпишитесь на спонсоров:\n\n"
+        f"{links_text}"
+    )
+
+    return text
 
 def send_long_html_message(chat_id, text, reply_markup=None):
     max_length = 3900
@@ -419,22 +432,14 @@ def admin_keyboard():
 def sponsor_keyboard():
     markup = types.InlineKeyboardMarkup(row_width=1)
 
-    channels = get_sponsor_channels()
-
-    for channel_id, channel, link, title, insert_position in channels:
-        markup.add(
-            types.InlineKeyboardButton(
-                text=f"📢 Подписаться на {channel}",
-                url=link
-            )
-        )
-
     markup.add(
         types.InlineKeyboardButton(
             text="✅ Проверить подписку",
             callback_data="check_subscription"
         )
     )
+
+    return markup
 
     return markup
 
@@ -508,9 +513,11 @@ def start(message):
             reply_markup=webapp_keyboard()
         )
     else:
-        bot.send_message(
+        subscription_text = build_subscription_message()
+
+        send_long_html_message(
             message.chat.id,
-            text + "\n\n👇 Сначала подпишитесь на спонсоров:",
+            text + "\n\n" + subscription_text,
             reply_markup=sponsor_keyboard()
         )
 
@@ -544,10 +551,11 @@ def access_command(message):
             reply_markup=webapp_keyboard()
         )
     else:
-        bot.send_message(
+        subscription_text = build_subscription_message()
+
+        send_long_html_message(
             message.chat.id,
-            "❌ Подписка не найдена.\n\n"
-            "Подпишитесь на спонсоров и нажмите кнопку проверки.",
+            "❌ Подписка не найдена.\n\n" + subscription_text,
             reply_markup=sponsor_keyboard()
         )
 
@@ -595,13 +603,13 @@ def check_subscription(call):
             show_alert=True
         )
 
-        bot.send_message(
+        subscription_text = build_subscription_message()
+
+        send_long_html_message(
             call.message.chat.id,
-            "❌ Пока подписка не найдена.\n\n"
-            "Подпишитесь на все каналы и нажмите «Проверить подписку».",
+            "❌ Пока подписка не найдена.\n\n" + subscription_text,
             reply_markup=sponsor_keyboard()
         )
-
 
 # =========================
 # ОБРАБОТКА СОСТОЯНИЙ АДМИНА
