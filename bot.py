@@ -6,7 +6,7 @@ import telebot
 from telebot import types
 
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "ВСТАВЬ_СЮДА_НОВЫЙ_ТОКЕН")
+BOT_TOKEN = "8818731291:AAG98FHdORTQIxKhp1nBcmQNvc8QR3JQ_YA"
 WEBAPP_URL = "https://effortless-gnome-87fcbf.netlify.app"
 
 ADMIN_ID = 1244731064
