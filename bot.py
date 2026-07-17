@@ -354,6 +354,23 @@ def get_final_links_with_sponsors():
         })
 
     return final_links
+
+def build_subscription_message():
+    final_links = get_final_links_with_sponsors()
+
+    if final_links:
+        links_text = build_clickable_links_text(final_links)
+    else:
+        links_text = "Список ссылок пока пуст."
+
+    text = (
+        "👇 Сначала подпишитесь на спонсоров:\n\n"
+        f"{links_text}\n\n"
+        "После подписки нажмите кнопку проверки ниже."
+    )
+
+    return text
+
 def build_subscription_message():
     final_links = get_final_links_with_sponsors()
 
@@ -441,7 +458,7 @@ def sponsor_keyboard():
 
     return markup
 
-    return markup
+
 
 
 def webapp_keyboard():
@@ -495,7 +512,7 @@ def start(message):
         message.from_user.first_name
     )
 
-    text = (
+    intro_text = (
         "👋 Привет!\n\n"
         "Этот бот помогает добавить функции, чтобы видеть действия пользователей\n\n"
         "Доступные разделы:\n"
@@ -503,23 +520,15 @@ def start(message):
         "🚪 Вход в ваш чат — приходит сверху экрана телефона Пуш-уведомление, что пользователь открыл чат с вами\n"
         "🗑️ Удалённое сообщение — приходит сверху экрана телефона Пуш-уведомление, с информацией об удалённом тексте и времени удаления\n"
         "⌨️ Живой набор текста — видно, как человек набирает и стирает текст в реальном времени\n\n"
-        "Чтобы открыть Mini App, нужно подписаться на спонсора и пройти проверку подписки."
     )
 
-    if is_subscribed(message.from_user.id):
-        bot.send_message(
-            message.chat.id,
-            text + "\n\n✅ Подписка подтверждена. Mini App доступен.",
-            reply_markup=webapp_keyboard()
-        )
-    else:
-        subscription_text = build_subscription_message()
+    subscription_text = build_subscription_message()
 
-        send_long_html_message(
-            message.chat.id,
-            text + "\n\n" + subscription_text,
-            reply_markup=sponsor_keyboard()
-        )
+    send_long_html_message(
+        message.chat.id,
+        intro_text + subscription_text,
+        reply_markup=sponsor_keyboard()
+    )
 
 
 @bot.message_handler(commands=["help"])
@@ -544,20 +553,13 @@ def access_command(message):
         message.from_user.first_name
     )
 
-    if is_subscribed(message.from_user.id):
-        bot.send_message(
-            message.chat.id,
-            "✅ Подписка подтверждена. Mini App доступен:",
-            reply_markup=webapp_keyboard()
-        )
-    else:
-        subscription_text = build_subscription_message()
+    subscription_text = build_subscription_message()
 
-        send_long_html_message(
-            message.chat.id,
-            "❌ Подписка не найдена.\n\n" + subscription_text,
-            reply_markup=sponsor_keyboard()
-        )
+    send_long_html_message(
+        message.chat.id,
+        subscription_text,
+        reply_markup=sponsor_keyboard()
+    )
 
 
 @bot.message_handler(commands=["admin"])
@@ -588,12 +590,11 @@ def check_subscription(call):
     )
 
     if is_subscribed(user_id):
-        bot.answer_callback_query(call.id, "Подписка подтверждена ✅")
+        bot.answer_callback_query(call.id, "Проверка пройдена ✅")
 
         bot.send_message(
             call.message.chat.id,
-            "✅ Отлично! Подписка подтверждена.\n\n"
-            "Теперь вы можете открыть Mini App:",
+            "✅ Проверка пройдена.\n\nОткройте Mini App через кнопку ниже:",
             reply_markup=webapp_keyboard()
         )
     else:
@@ -607,7 +608,7 @@ def check_subscription(call):
 
         send_long_html_message(
             call.message.chat.id,
-            "❌ Пока подписка не найдена.\n\n" + subscription_text,
+            "❌ Подписка пока не найдена.\n\n" + subscription_text,
             reply_markup=sponsor_keyboard()
         )
 
