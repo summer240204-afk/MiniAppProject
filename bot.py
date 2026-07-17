@@ -2,6 +2,13 @@ import os
 import json
 import sqlite3
 import html
+import os
+
+# Отключаем прокси, чтобы requests не пытался идти через сломанный proxy
+for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"):
+    os.environ.pop(key, None)
+
+os.environ["NO_PROXY"] = "api.telegram.org,localhost,127.0.0.1"
 import telebot
 from telebot import types
 
