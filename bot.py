@@ -1,13 +1,13 @@
 import os
 import json
 import sqlite3
+import html
 import telebot
 from telebot import types
 
 
-BOT_TOKEN = "8818731291:AAG98FHdORTQIxKhp1nBcmQNvc8QR3JQ_YA"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "ВСТАВЬ_СЮДА_НОВЫЙ_ТОКЕН")
 WEBAPP_URL = "https://effortless-gnome-87fcbf.netlify.app"
-
 
 ADMIN_ID = 1244731064
 
@@ -29,6 +29,17 @@ def db_connect():
     return sqlite3.connect(DATABASE_NAME)
 
 
+def column_exists(cursor, table_name, column_name):
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = cursor.fetchall()
+
+    for column in columns:
+        if column[1] == column_name:
+            return True
+
+    return False
+
+
 def init_db():
     conn = db_connect()
     cursor = conn.cursor()
@@ -44,6 +55,7 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS links (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
             url TEXT NOT NULL
         )
     """)
@@ -52,9 +64,22 @@ def init_db():
         CREATE TABLE IF NOT EXISTS sponsor_channels (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             channel TEXT NOT NULL,
-            link TEXT NOT NULL
+            link TEXT NOT NULL,
+            title TEXT,
+            insert_position INTEGER
         )
     """)
+
+    conn.commit()
+
+    if not column_exists(cursor, "links", "title"):
+        cursor.execute("ALTER TABLE links ADD COLUMN title TEXT")
+
+    if not column_exists(cursor, "sponsor_channels", "title"):
+        cursor.execute("ALTER TABLE sponsor_channels ADD COLUMN title TEXT")
+
+    if not column_exists(cursor, "sponsor_channels", "insert_position"):
+        cursor.execute("ALTER TABLE sponsor_channels ADD COLUMN insert_position INTEGER")
 
     conn.commit()
 
@@ -63,9 +88,14 @@ def init_db():
 
     if channels_count == 0:
         cursor.execute("""
-            INSERT INTO sponsor_channels (channel, link)
-            VALUES (?, ?)
-        """, (DEFAULT_SPONSOR_CHANNEL, DEFAULT_SPONSOR_LINK))
+            INSERT INTO sponsor_channels (channel, link, title, insert_position)
+            VALUES (?, ?, ?, ?)
+        """, (
+            DEFAULT_SPONSOR_CHANNEL,
+            DEFAULT_SPONSOR_LINK,
+            f"🔥 {DEFAULT_SPONSOR_CHANNEL}",
+            None
+        ))
 
         conn.commit()
 
@@ -109,11 +139,14 @@ def get_users_count():
     return count
 
 
-def add_link(url):
+def add_link(title, url):
     conn = db_connect()
     cursor = conn.cursor()
 
-    cursor.execute("INSERT INTO links (url) VALUES (?)", (url,))
+    cursor.execute("""
+        INSERT INTO links (title, url)
+        VALUES (?, ?)
+    """, (title, url))
 
     conn.commit()
     conn.close()
@@ -123,7 +156,7 @@ def get_links():
     conn = db_connect()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, url FROM links")
+    cursor.execute("SELECT id, title, url FROM links ORDER BY id ASC")
     links = cursor.fetchall()
 
     conn.close()
@@ -141,14 +174,17 @@ def clear_links():
     conn.close()
 
 
-def add_sponsor_channel(channel, link):
+def add_sponsor_channel(channel, link, title=None, insert_position=None):
     conn = db_connect()
     cursor = conn.cursor()
 
+    if title is None or title.strip() == "":
+        title = f"🔥 {channel}"
+
     cursor.execute("""
-        INSERT INTO sponsor_channels (channel, link)
-        VALUES (?, ?)
-    """, (channel, link))
+        INSERT INTO sponsor_channels (channel, link, title, insert_position)
+        VALUES (?, ?, ?, ?)
+    """, (channel, link, title, insert_position))
 
     conn.commit()
     conn.close()
@@ -158,7 +194,12 @@ def get_sponsor_channels():
     conn = db_connect()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, channel, link FROM sponsor_channels")
+    cursor.execute("""
+        SELECT id, channel, link, title, insert_position
+        FROM sponsor_channels
+        ORDER BY id ASC
+    """)
+
     channels = cursor.fetchall()
 
     conn.close()
@@ -174,6 +215,183 @@ def clear_sponsor_channels():
 
     conn.commit()
     conn.close()
+
+
+# =========================
+# РАБОТА С КЛИКАБЕЛЬНЫМИ ССЫЛКАМИ
+# =========================
+
+def utf16_index_to_py_index(text, utf16_index):
+    encoded = text.encode("utf-16-le")
+    sliced = encoded[:utf16_index * 2]
+
+    try:
+        return len(sliced.decode("utf-16-le"))
+    except UnicodeDecodeError:
+        return len(sliced.decode("utf-16-le", errors="ignore"))
+
+
+def extract_clickable_links_from_message(message):
+    text = message.text or message.caption or ""
+    entities = message.entities or message.caption_entities or []
+
+    result = []
+
+    lines = text.splitlines()
+    current_offset = 0
+
+    for line in lines:
+        clean_line = line.strip()
+
+        if not clean_line:
+            current_offset += len(line) + 1
+            continue
+
+        line_start = current_offset
+        line_end = current_offset + len(line)
+
+        found_url = None
+
+        for entity in entities:
+            entity_start = utf16_index_to_py_index(text, entity.offset)
+            entity_end = utf16_index_to_py_index(text, entity.offset + entity.length)
+
+            if entity_start >= line_start and entity_end <= line_end:
+                if entity.type == "text_link":
+                    found_url = entity.url
+                    break
+
+                if entity.type == "url":
+                    found_url = text[entity_start:entity_end]
+                    break
+
+        if found_url:
+            result.append({
+                "title": clean_line,
+                "url": found_url
+            })
+
+        current_offset += len(line) + 1
+
+    return result
+
+
+def build_clickable_links_text(links):
+    lines = []
+
+    for item in links:
+        title = html.escape(str(item["title"]))
+        url = html.escape(str(item["url"]), quote=True)
+
+        lines.append(f'<a href="{url}">{title}</a>')
+
+    return "\n".join(lines)
+
+
+def get_final_links_with_sponsors():
+    main_links = []
+
+    for link_id, title, url in get_links():
+        if not title:
+            title = url
+
+        main_links.append({
+            "title": title,
+            "url": url
+        })
+
+    sponsor_links = []
+
+    for channel_id, channel, link, title, insert_position in get_sponsor_channels():
+        if not title:
+            title = f"🔥 {channel}"
+
+        sponsor_links.append({
+            "title": title,
+            "url": link,
+            "position": insert_position
+        })
+
+    final_links = main_links.copy()
+
+    sponsors_with_position = []
+    sponsors_without_position = []
+
+    for sponsor in sponsor_links:
+        if sponsor["position"]:
+            sponsors_with_position.append(sponsor)
+        else:
+            sponsors_without_position.append(sponsor)
+
+    sponsors_with_position.sort(key=lambda item: item["position"])
+
+    offset = 0
+
+    for sponsor in sponsors_with_position:
+        position = sponsor["position"]
+        insert_index = position - 1 + offset
+
+        if insert_index < 0:
+            insert_index = 0
+
+        if insert_index > len(final_links):
+            insert_index = len(final_links)
+
+        final_links.insert(insert_index, {
+            "title": sponsor["title"],
+            "url": sponsor["url"]
+        })
+
+        offset += 1
+
+    for sponsor in sponsors_without_position:
+        final_links.append({
+            "title": sponsor["title"],
+            "url": sponsor["url"]
+        })
+
+    return final_links
+
+
+def send_long_html_message(chat_id, text, reply_markup=None):
+    max_length = 3900
+
+    if len(text) <= max_length:
+        bot.send_message(
+            chat_id,
+            text,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=reply_markup
+        )
+        return
+
+    parts = []
+    current_part = ""
+
+    for line in text.splitlines():
+        if len(current_part) + len(line) + 1 > max_length:
+            parts.append(current_part)
+            current_part = line
+        else:
+            if current_part:
+                current_part += "\n" + line
+            else:
+                current_part = line
+
+    if current_part:
+        parts.append(current_part)
+
+    for index, part in enumerate(parts):
+        markup = reply_markup if index == len(parts) - 1 else None
+
+        bot.send_message(
+            chat_id,
+            part,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=markup
+        )
 
 
 # =========================
@@ -200,7 +418,7 @@ def sponsor_keyboard():
 
     channels = get_sponsor_channels()
 
-    for channel_id, channel, link in channels:
+    for channel_id, channel, link, title, insert_position in channels:
         markup.add(
             types.InlineKeyboardButton(
                 text=f"📢 Подписаться на {channel}",
@@ -243,7 +461,7 @@ def is_subscribed(user_id):
     if not channels:
         return True
 
-    for channel_id, channel, link in channels:
+    for channel_id, channel, link, title, insert_position in channels:
         try:
             member = bot.get_chat_member(channel, user_id)
 
@@ -438,31 +656,41 @@ def handle_admin_state(message):
         if message.content_type != "text":
             bot.send_message(
                 message.chat.id,
-                "❌ Нужно отправить именно текст со ссылками.",
+                "❌ Нужно отправить именно текст с кликабельными ссылками.",
                 reply_markup=admin_keyboard()
             )
             return
 
-        lines = message.text.splitlines()
+        imported_links = extract_clickable_links_from_message(message)
+
+        if not imported_links:
+            bot.send_message(
+                message.chat.id,
+                "❌ Я не нашла кликабельные ссылки.\n\n"
+                "Важно: текст должен быть именно кликабельным.\n"
+                "То есть ты нажимаешь на строку — и открывается канал.\n\n"
+                "Пример правильного вида:\n"
+                "🛍️ Вб дарит бесплатно\n"
+                "💅 Трендовый маникюр\n"
+                "📳 Рекко",
+                reply_markup=admin_keyboard()
+            )
+            return
+
+        clear_links()
 
         added = 0
 
-        for line in lines:
-            url = line.strip()
-
-            if (
-                url.startswith("http://")
-                or url.startswith("https://")
-                or url.startswith("t.me/")
-            ):
-                add_link(url)
-                added += 1
+        for item in imported_links:
+            add_link(item["title"], item["url"])
+            added += 1
 
         del admin_states[message.from_user.id]
 
         bot.send_message(
             message.chat.id,
-            f"✅ Импорт завершён.\n\nДобавлено ссылок: {added}",
+            f"✅ Импорт завершён.\n\n"
+            f"Добавлено кликабельных ссылок: {added}",
             reply_markup=admin_keyboard()
         )
 
@@ -487,23 +715,54 @@ def handle_admin_state(message):
             if not line:
                 continue
 
-            if "|" in line:
-                parts = line.split("|", 1)
-                channel = parts[0].strip()
-                link = parts[1].strip()
-            else:
-                channel = line.strip()
-                link = f"https://t.me/{channel.replace('@', '')}"
+            parts = [part.strip() for part in line.split("|")]
 
-            if channel.startswith("@") and link.startswith("http"):
-                add_sponsor_channel(channel, link)
+            channel = None
+            link = None
+            title = None
+            insert_position = None
+
+            if len(parts) == 1:
+                channel = parts[0]
+                link = f"https://t.me/{channel.replace('@', '')}"
+                title = f"🔥 {channel}"
+
+            elif len(parts) == 2:
+                channel = parts[0]
+                link = parts[1]
+                title = f"🔥 {channel}"
+
+            elif len(parts) == 3:
+                channel = parts[0]
+                link = parts[1]
+                title = parts[2]
+
+            elif len(parts) >= 4:
+                channel = parts[0]
+                link = parts[1]
+                title = parts[2]
+
+                try:
+                    insert_position = int(parts[3])
+                except Exception:
+                    insert_position = None
+
+            if (
+                isinstance(channel, str)
+                and isinstance(link, str)
+                and channel.startswith("@")
+                and link.startswith("http")
+            ):
+                add_sponsor_channel(channel, link, title, insert_position)
                 added += 1
 
         del admin_states[message.from_user.id]
 
         bot.send_message(
             message.chat.id,
-            f"✅ Проверочные каналы добавлены.\n\nДобавлено: {added}",
+            f"✅ Проверочные каналы добавлены.\n\n"
+            f"Добавлено: {added}\n\n"
+            "Если ты указала позицию, канал вставится внутрь списка ссылок.",
             reply_markup=admin_keyboard()
         )
 
@@ -539,12 +798,14 @@ def import_links_start(message):
 
     bot.send_message(
         message.chat.id,
-        "📥 Отправь ссылки списком.\n\n"
-        "Каждая ссылка с новой строки.\n\n"
-        "Пример:\n"
-        "https://t.me/channel1\n"
-        "https://t.me/channel2\n"
-        "https://t.me/channel3\n\n"
+        "📥 Отправь список КЛИКАБЕЛЬНЫХ ссылок одним сообщением.\n\n"
+        "То есть не так:\n"
+        "https://t.me/channel1\n\n"
+        "А вот так, чтобы каждая строка уже нажималась:\n\n"
+        "🛍️ Вб дарит бесплатно\n"
+        "💅 Трендовый маникюр\n"
+        "📳 Рекко\n\n"
+        "Важно: если строка не кликается у тебя в Telegram, бот тоже не сможет узнать ссылку.\n\n"
         "Для отмены нажми ❌ Отмена.",
         reply_markup=admin_keyboard()
     )
@@ -560,12 +821,18 @@ def sponsor_channels_start(message):
     bot.send_message(
         message.chat.id,
         "⚙️ Отправь проверочные каналы списком.\n\n"
-        "Формат 1 — только username канала:\n"
-        "@channel1\n"
-        "@channel2\n\n"
-        "Формат 2 — username и ссылка через палочку:\n"
-        "@channel1 | https://t.me/channel1\n"
-        "@channel2 | https://t.me/channel2\n\n"
+        "Формат простой:\n"
+        "@channel1\n\n"
+        "Формат со ссылкой:\n"
+        "@channel1 | https://t.me/channel1\n\n"
+        "Формат с названием:\n"
+        "@channel1 | https://t.me/channel1 | 🔥 Твоя проверочная ссылка\n\n"
+        "Формат с названием и местом вставки:\n"
+        "@channel1 | https://t.me/channel1 | 🔥 Твоя проверочная ссылка | 21\n\n"
+        "Где 21 — это место, куда вставить проверочную ссылку внутри общего списка.\n\n"
+        "Если проверочных каналов два:\n"
+        "@channel1 | https://t.me/channel1 | 🔥 Проверка 1 | 5\n"
+        "@channel2 | https://t.me/channel2 | 🔥 Проверка 2 | 20\n\n"
         "Для отмены нажми ❌ Отмена.",
         reply_markup=admin_keyboard()
     )
@@ -576,30 +843,39 @@ def show_links(message):
     if message.from_user.id != ADMIN_ID:
         return
 
-    links = get_links()
+    final_links = get_final_links_with_sponsors()
     channels = get_sponsor_channels()
 
-    text = "📋 Данные бота\n\n"
-
-    text += "🔗 Ссылки:\n"
-
-    if not links:
-        text += "Список ссылок пуст.\n\n"
+    if not final_links:
+        links_text = "Список ссылок пуст."
     else:
-        for link_id, url in links:
-            text += f"{link_id}. {url}\n"
+        links_text = build_clickable_links_text(final_links)
 
-        text += "\n"
+    text = "📋 Итоговый список ссылок:\n\n"
+    text += links_text
 
-    text += "📢 Проверочные каналы:\n"
+    text += "\n\n📢 Проверочные каналы:\n\n"
 
     if not channels:
         text += "Список каналов пуст."
     else:
-        for channel_id, channel, link in channels:
-            text += f"{channel_id}. {channel}\n{link}\n\n"
+        for channel_id, channel, link, title, insert_position in channels:
+            safe_channel = html.escape(str(channel))
+            safe_title = html.escape(str(title))
+            safe_link = html.escape(str(link))
 
-    bot.send_message(
+            text += f"{channel_id}. {safe_channel}\n"
+            text += f"Название: {safe_title}\n"
+            text += f"Ссылка: {safe_link}\n"
+
+            if insert_position:
+                text += f"Место вставки: {insert_position}\n"
+            else:
+                text += "Место вставки: в конец списка\n"
+
+            text += "\n"
+
+    send_long_html_message(
         message.chat.id,
         text,
         reply_markup=admin_keyboard()
@@ -724,14 +1000,19 @@ def handle_web_app_data(message):
 # ЗАПУСК
 # =========================
 
-bot.set_my_commands([
-    types.BotCommand("start", "Запустить бота"),
-    types.BotCommand("access", "Проверить доступ к Mini App"),
-    types.BotCommand("help", "Помощь"),
-    types.BotCommand("admin", "Админ-панель")
-])
+try:
+    bot.set_my_commands([
+        types.BotCommand("start", "Запустить бота"),
+        types.BotCommand("access", "Проверить доступ к Mini App"),
+        types.BotCommand("help", "Помощь"),
+        types.BotCommand("admin", "Админ-панель")
+    ])
+except Exception as error:
+    print("Не удалось установить команды бота:", error)
 
 
 init_db()
+
+print("Бот запущен")
 
 bot.infinity_polling(skip_pending=True)
