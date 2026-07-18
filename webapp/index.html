@@ -28,7 +28,7 @@
                 </header>
 
                 <p class="description">
-                    Выберите действие, чтобы посмотреть краткое описание: что оно означает и как примерно отображается в Telegram.
+                    Push-уведомления о действиях собеседника в вашем личном чате.
                 </p>
 
                 <div class="status-preview">
@@ -56,19 +56,11 @@
                         </span>
                     </button>
 
-                    <button class="action-btn" data-key="chatEnter">
-                        <span class="action-icon">🚪</span>
+                    <button class="action-btn" data-key="chatActions">
+                        <span class="action-icon">💬</span>
                         <span>
-                            <b>Вход в ваш чат</b>
-                            <small>Пуш-уведомление, что пользователь открыл чат с вами</small>
-                        </span>
-                    </button>
-
-                    <button class="action-btn" data-key="deletedMessage">
-                        <span class="action-icon">🗑️</span>
-                        <span>
-                            <b>Удалённое сообщение</b>
-                            <small>Пуш-уведомление с текстом удалённого сообщения</small>
+                            <b>Действия в чате</b>
+                            <small>Удалённые сообщения, скриншоты, пересылка и другие действия</small>
                         </span>
                     </button>
 
@@ -123,8 +115,8 @@
                             </div>
 
                             <div class="ios-notification-body">
-                                <b id="pushTitle">Telegram</b>
-                                <p id="pushText">Пример уведомления</p>
+                                <b id="pushTitle">Пользователь</b>
+                                <p id="pushText">Зашел(-а) в ваш личный чат</p>
                             </div>
                         </div>
                     </div>
@@ -134,7 +126,7 @@
                     <div class="example-avatar"></div>
 
                     <div class="example-content">
-                        <b id="exampleName">@username</b>
+                        <b id="exampleName">Пользователь</b>
 
                         <div class="telegram-typing-status" id="typingStatus">
                             печатает<span class="typing-dots"></span>
@@ -156,14 +148,14 @@
     </div>
 
     <div id="successOverlay" class="success-overlay hidden">
-    <div class="success-card">
-        <p class="success-message" id="successMessage"></p>
+        <div class="success-card">
+            <p class="success-message" id="successMessage"></p>
 
-        <button class="waiting-button" id="waitingBtn" type="button">
-    ⏳ Ожидание
-        </button>
+            <button class="waiting-button" id="waitingBtn" type="button">
+                ⏳ Ожидание
+            </button>
+        </div>
     </div>
-</div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="app.js"></script>

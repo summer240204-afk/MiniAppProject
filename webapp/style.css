@@ -257,8 +257,6 @@ h2 {
     font-size: 12px;
 }
 
-
-
 .hidden {
     display: none;
 }
@@ -326,6 +324,46 @@ h2 {
     font-size: 14px;
 }
 
+.example-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.example-content b {
+    display: block;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.example-content p {
+    display: block;
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.telegram-typing-status {
+    display: none;
+    color: var(--blue);
+    font-size: 14px;
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+.typing-demo .telegram-typing-status {
+    display: block;
+}
+
+.typing-dots::after {
+    content: "";
+    animation: telegramTypingDots 1.2s infinite;
+}
+
 .main-btn {
     width: 100%;
     padding: 16px;
@@ -349,32 +387,6 @@ h2 {
     text-align: center;
     font-size: 12px;
     line-height: 1.4;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(34, 227, 157, 0.65);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(34, 227, 157, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(34, 227, 157, 0);
-    }
-}
-
-@keyframes typing {
-    0%, 80%, 100% {
-        opacity: 0.3;
-        transform: translateY(0);
-    }
-
-    40% {
-        opacity: 1;
-        transform: translateY(-3px);
-    }
 }
 
 .phone-preview {
@@ -472,11 +484,18 @@ h2 {
     font-weight: 700;
 }
 
+.ios-notification-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .ios-notification-body b {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     color: #111827;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 800;
 }
 
 .ios-notification-body p {
@@ -486,136 +505,6 @@ h2 {
     line-height: 1.35;
 }
 
-@keyframes notificationDrop {
-    from {
-        opacity: 0;
-        transform: translateY(-18px) scale(0.96);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-.typing-demo #summaryExample {
-    position: relative;
-    display: inline-block;
-    color: #2ea6ff;
-    font-weight: 700;
-}
-
-.typing-demo #summaryExample::after {
-    content: "";
-    display: inline-block;
-    width: 2px;
-    height: 1em;
-    margin-left: 3px;
-    background: #2ea6ff;
-    vertical-align: -2px;
-    animation: cursorBlink 0.8s infinite;
-}
-
-@keyframes cursorBlink {
-    0%, 45% {
-        opacity: 1;
-    }
-
-    46%, 100% {
-        opacity: 0;
-    }
-}
-.example-card.typing-demo {
-    border-color: rgba(46, 166, 255, 0.35);
-    background: linear-gradient(
-        135deg,
-        rgba(46, 166, 255, 0.14),
-        rgba(130, 95, 255, 0.16)
-    );
-    box-shadow: 0 0 24px rgba(46, 166, 255, 0.12);
-}
-.example-content {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
-}
-
-.example-content b {
-    display: block;
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.2;
-}
-
-.example-content p {
-    display: block;
-    margin: 0;
-    color: var(--blue);
-    font-size: 14px;
-    line-height: 1.35;
-    word-break: break-word;
-}
-.example-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-.example-content b {
-    display: block;
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.2;
-}
-
-.telegram-typing-status {
-    display: none;
-    color: var(--blue);
-    font-size: 14px;
-    line-height: 1.25;
-    font-weight: 600;
-}
-
-.typing-demo .telegram-typing-status {
-    display: block;
-}
-
-.typing-dots::after {
-    content: "";
-    animation: telegramTypingDots 1.2s infinite;
-}
-
-@keyframes telegramTypingDots {
-    0% {
-        content: "";
-    }
-
-    25% {
-        content: ".";
-    }
-
-    50% {
-        content: "..";
-    }
-
-    75% {
-        content: "...";
-    }
-
-    100% {
-        content: "";
-    }
-}
-
-.example-content p {
-    display: block;
-    margin: 0;
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.35;
-    word-break: break-word;
-}
 .success-overlay {
     position: fixed;
     inset: 0;
@@ -668,6 +557,68 @@ h2 {
     font-weight: 900;
     cursor: default;
     opacity: 1;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 227, 157, 0.65);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(34, 227, 157, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 227, 157, 0);
+    }
+}
+
+@keyframes typing {
+    0%,
+    80%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+
+    40% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes telegramTypingDots {
+    0% {
+        content: "";
+    }
+
+    25% {
+        content: ".";
+    }
+
+    50% {
+        content: "..";
+    }
+
+    75% {
+        content: "...";
+    }
+
+    100% {
+        content: "";
+    }
+}
+
+@keyframes notificationDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-18px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes successFadeIn {
