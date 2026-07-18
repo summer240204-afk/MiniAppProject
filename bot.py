@@ -1110,7 +1110,6 @@ try:
 except Exception as error:
     print("Не удалось установить команды бота:", error)
 
-
 init_db()
 
 print("Бот запущен")

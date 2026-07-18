@@ -229,24 +229,11 @@ sendBtn.addEventListener("click", () => {
 });
 
 waitingBtn.addEventListener("click", () => {
-    if (!selectedAction) {
-        return;
+    try {
+        stopTypingAnimation();
+        tg.close();
+    } catch (error) {
+        console.error("Ошибка закрытия Mini App:", error);
+        window.close();
     }
-
-    const finalMessage = getFinalMessage();
-
-    const data = {
-        type: "request_accepted",
-        actionKey: selectedActionKey,
-        actionTitle: selectedAction.title,
-        message: finalMessage
-    };
-
-    console.log("Отправляем данные в бота:", data);
-
-    tg.sendData(JSON.stringify(data));
-
-    stopTypingAnimation();
-
-    tg.close();
 });
