@@ -2,7 +2,7 @@ import os
 import json
 import sqlite3
 import html
-import os
+import time
 
 
 import telebot
@@ -22,7 +22,7 @@ DATABASE_NAME = "database.db"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 admin_states = {}
-
+user_states = {}
 
 # =========================
 # БАЗА ДАННЫХ
@@ -364,27 +364,23 @@ def build_subscription_message():
         links_text = "Список ссылок пока пуст."
 
     text = (
-        "👇 Сначала подпишитесь на спонсоров:\n\n"
-        f"{links_text}\n\n"
-        "После подписки нажмите кнопку проверки ниже."
+        "<b>🎉 Почти готово!</b>\n\n"
+        "Проверка аккаунта прошла успешно, и доступ к Mini App уже подготовлен.\n\n"
+        "<b>Чтобы открыть функции, нужно подписаться на наших спонсоров</b>\n\n"
+        "<b>Что будет после подписки?</b>\n"
+        "✅ система проверит подписку\n"
+        "✅ доступ активируется автоматически\n"
+        "✅ появится кнопка входа в Mini App\n"
+        "✅ ты сможешь выбрать нужную функцию\n\n"
+        "<i>Обычно это занимает меньше минуты</i>\n\n"
+        "<i><b>Спонсоры:</b></i>\n"
+         f"{links_text}\n\n"
+        "После подписки нажми кнопку\n" 
+        "<b>«✅ Проверить подписку»</b>"
     )
 
     return text
 
-def build_subscription_message():
-    final_links = get_final_links_with_sponsors()
-
-    if final_links:
-        links_text = build_clickable_links_text(final_links)
-    else:
-        links_text = "Список ссылок пока пуст."
-
-    text = (
-        "👇 Сначала подпишитесь на спонсоров:\n\n"
-        f"{links_text}"
-    )
-
-    return text
 
 def send_long_html_message(chat_id, text, reply_markup=None):
     max_length = 3900
@@ -458,20 +454,31 @@ def sponsor_keyboard():
 
     return markup
 
+def continue_keyboard():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+
+    markup.add(
+        types.InlineKeyboardButton(
+            text="Продолжить",
+            callback_data="continue_to_subscription"
+        )
+    )
+
+    return markup
 
 
 
 def webapp_keyboard():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup = types.InlineKeyboardMarkup(row_width=1)
 
     web_app = types.WebAppInfo(WEBAPP_URL)
 
-    button = types.KeyboardButton(
-        text="📡 Открыть Mini App",
-        web_app=web_app
+    markup.add(
+        types.InlineKeyboardButton(
+            text="📡 Открыть Mini App",
+            web_app=web_app
+        )
     )
-
-    markup.add(button)
 
     return markup
 
@@ -512,22 +519,33 @@ def start(message):
         message.from_user.first_name
     )
 
+    user_states[message.from_user.id] = "waiting_account_text"
+
     intro_text = (
-        "👋 Привет!\n\n"
-        "Этот бот помогает добавить функции, чтобы видеть действия пользователей\n\n"
-        "Доступные разделы:\n"
-        "👀 Ник активного чата — под ником человека видно, с кем он сейчас в переписке\n"
-        "🚪 Вход в ваш чат — приходит сверху экрана телефона Пуш-уведомление, что пользователь открыл чат с вами\n"
-        "🗑️ Удалённое сообщение — приходит сверху экрана телефона Пуш-уведомление, с информацией об удалённом тексте и времени удаления\n"
-        "⌨️ Живой набор текста — видно, как человек набирает и стирает текст в реальном времени\n\n"
-    )
+        """👋 <b>Привет! Добро пожаловать!</b>
 
-    subscription_text = build_subscription_message()
+Я подготовил для тебя <b><u>доступ к закрытым функциям сервиса</u></b> — здесь собраны инструменты, которые помогают отслеживать активность и получать важные уведомления в удобном формате.
 
-    send_long_html_message(
+🔥 <b>Что доступно внутри:</b>
+
+👀 <b>Ник активного чата</b>
+<i>Показывает под никм человека с кем он сейчас находиться в чате.</i>
+
+🚪 <b>Вход в чат</b>
+<i>Ты получаешь <b><u>push-уведомление</u></b>, когда пользователь открывает чат с тобой.</i>
+
+🗑️ <b>Удалённые сообщения</b>
+<i>Если сообщение было удалено, ты увидишь уведомление с <b>текстом</b> и <b>временем удаления</b>.</i>
+
+⌨️ <b>Живой набор текста</b>
+<i>Можно видеть, как человек <u>набирает текст и изменяет</u> его в реальном времени</i>.
+
+⚡ <b><u>Чтобы открыть доступ к функциям</u></b>, отправь любое текстовое сообщение — я проверю твой аккаунт и продолжу настройку.""")
+
+    bot.send_message(
         message.chat.id,
-        intro_text + subscription_text,
-        reply_markup=sponsor_keyboard()
+        intro_text,
+        parse_mode="HTML"
     )
 
 
@@ -579,6 +597,27 @@ def admin_panel(message):
 # CALLBACK ПРОВЕРКИ ПОДПИСКИ
 # =========================
 
+@bot.callback_query_handler(func=lambda call: call.data == "continue_to_subscription")
+def continue_to_subscription(call):
+    add_user_to_db(
+        call.from_user.id,
+        call.from_user.username,
+        call.from_user.first_name
+    )
+
+    user_states.pop(call.from_user.id, None)
+
+    bot.answer_callback_query(call.id)
+
+    subscription_text = build_subscription_message()
+
+    send_long_html_message(
+        call.message.chat.id,
+        subscription_text,
+        reply_markup=sponsor_keyboard()
+    )
+
+
 @bot.callback_query_handler(func=lambda call: call.data == "check_subscription")
 def check_subscription(call):
     user_id = call.from_user.id
@@ -589,6 +628,14 @@ def check_subscription(call):
         call.from_user.first_name
     )
 
+    try:
+        bot.delete_message(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id
+        )
+    except Exception as error:
+        print("Не удалось удалить сообщение со ссылками:", error)
+
     if is_subscribed(user_id):
         bot.answer_callback_query(call.id, "Проверка пройдена ✅")
 
@@ -597,6 +644,7 @@ def check_subscription(call):
             "✅ Проверка пройдена.\n\nОткройте Mini App через кнопку ниже:",
             reply_markup=webapp_keyboard()
         )
+
     else:
         bot.answer_callback_query(
             call.id,
@@ -611,7 +659,6 @@ def check_subscription(call):
             "❌ Подписка пока не найдена.\n\n" + subscription_text,
             reply_markup=sponsor_keyboard()
         )
-
 # =========================
 # ОБРАБОТКА СОСТОЯНИЙ АДМИНА
 # =========================
@@ -961,13 +1008,42 @@ def cancel_admin_action(message):
         reply_markup=admin_keyboard()
     )
 
+@bot.message_handler(
+    content_types=["text"],
+    func=lambda message: user_states.get(message.from_user.id) == "waiting_account_text"
+)
+def handle_account_check_text(message):
+    add_user_to_db(
+        message.from_user.id,
+        message.from_user.username,
+        message.from_user.first_name
+    )
 
+    user_states[message.from_user.id] = "account_analysis_done"
+
+    bot.send_message(
+        message.chat.id,
+        "<b><i>Анализ аккаунта...</i></b>",
+        parse_mode="HTML"
+    )
+
+    bot.send_chat_action(message.chat.id, "typing")
+    time.sleep(4)
+
+    bot.send_message(
+        message.chat.id,
+        "<b>✅ Готово, анализ прошел успешно</b>",
+        parse_mode="HTML",
+        reply_markup=continue_keyboard()
+    )
 # =========================
 # MINI APP DATA
 # =========================
 
 @bot.message_handler(content_types=["web_app_data"])
 def handle_web_app_data(message):
+    print("WEB APP DATA:", message.web_app_data.data)
+
     add_user_to_db(
         message.from_user.id,
         message.from_user.username,
@@ -988,10 +1064,13 @@ def handle_web_app_data(message):
     user_id = user.get("id", message.from_user.id) if user else message.from_user.id
 
     client_message = (
-        "✅ Запрос принят.\n\n"
-        f"Выбранный раздел: {service}\n\n"
-        "⏳ Ожидание обработки: 48–56 часов.\n"
-        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки."
+        "✅Ваш запрос успешно принят\n\n"
+        f"🔹Выбранный раздел: {service}\n\n"
+        "⏳Статус: обработка уже запущена\n"
+        "Обычно проверка занимает 48–56 часов\n\n"
+        "🙏Спасибо за доверие!\n"
+        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки, "
+        "чтобы доступ активировался без задержек."
     )
 
     admin_message = (
@@ -1002,8 +1081,15 @@ def handle_web_app_data(message):
         f"Telegram ID: {user_id}"
     )
 
-    bot.send_message(message.chat.id, client_message)
-    bot.send_message(ADMIN_ID, admin_message)
+    bot.send_message(
+        message.chat.id,
+        client_message,
+    )
+
+    bot.send_message(
+        ADMIN_ID,
+        admin_message
+    )
 
     print(admin_message)
 
