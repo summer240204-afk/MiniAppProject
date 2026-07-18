@@ -10,7 +10,7 @@ from telebot import types
 
 
 BOT_TOKEN = "8818731291:AAG98FHdORTQIxKhp1nBcmQNvc8QR3JQ_YA"
-WEBAPP_URL = "https://effortless-gnome-87fcbf.netlify.app"
+WEBAPP_URL = "https://playful-trifle-e63682.netlify.app"
 
 ADMIN_ID = 1244731064
 
@@ -1042,8 +1042,6 @@ def handle_account_check_text(message):
 
 @bot.message_handler(content_types=["web_app_data"])
 def handle_web_app_data(message):
-    print("WEB APP DATA:", message.web_app_data.data)
-
     add_user_to_db(
         message.from_user.id,
         message.from_user.username,
@@ -1064,13 +1062,10 @@ def handle_web_app_data(message):
     user_id = user.get("id", message.from_user.id) if user else message.from_user.id
 
     client_message = (
-        "✅Ваш запрос успешно принят\n\n"
-        f"🔹Выбранный раздел: {service}\n\n"
-        "⏳Статус: обработка уже запущена\n"
-        "Обычно проверка занимает 48–56 часов\n\n"
-        "🙏Спасибо за доверие!\n"
-        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки, "
-        "чтобы доступ активировался без задержек."
+        "✅ Запрос принят.\n\n"
+        f"Выбранный раздел: {service}\n\n"
+        "⏳ Ожидание обработки: 48–56 часов.\n"
+        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки."
     )
 
     admin_message = (
@@ -1081,15 +1076,8 @@ def handle_web_app_data(message):
         f"Telegram ID: {user_id}"
     )
 
-    bot.send_message(
-        message.chat.id,
-        client_message,
-    )
-
-    bot.send_message(
-        ADMIN_ID,
-        admin_message
-    )
+    bot.send_message(message.chat.id, client_message)
+    bot.send_message(ADMIN_ID, admin_message)
 
     print(admin_message)
 
