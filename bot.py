@@ -10,7 +10,7 @@ from telebot import types
 
 
 BOT_TOKEN = "8818731291:AAG98FHdORTQIxKhp1nBcmQNvc8QR3JQ_YA"
-WEBAPP_URL = "https://playful-trifle-e63682.netlify.app"
+WEBAPP_URL = "https://luxury-speculoos-8e3c65.netlify.app"
 
 ADMIN_ID = 1244731064
 
