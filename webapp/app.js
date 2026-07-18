@@ -190,6 +190,14 @@ backBtn.addEventListener("click", () => {
     choiceScreen.classList.remove("hidden");
 });
 
+const tg = window.Telegram.WebApp;
+
+tg.ready();
+
+if (!sendBtn) {
+    console.error("Кнопка sendBtn не найдена");
+}
+
 sendBtn.addEventListener("click", () => {
     if (!selectedAction) {
         tg.showAlert("Сначала выберите действие");
@@ -202,6 +210,11 @@ sendBtn.addEventListener("click", () => {
         user: tg.initDataUnsafe.user || null
     };
 
+    console.log("Отправляем данные в бота:", data);
+
     tg.sendData(JSON.stringify(data));
-    tg.close();
+
+    setTimeout(() => {
+        tg.close();
+    }, 300);
 });
