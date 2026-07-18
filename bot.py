@@ -1050,29 +1050,43 @@ def handle_web_app_data(message):
 
     try:
         data = json.loads(message.web_app_data.data)
-    except Exception:
+    except Exception as error:
+        print("Ошибка чтения данных из Mini App:", error)
         bot.send_message(message.chat.id, "Ошибка чтения данных из Mini App")
         return
 
-    service = data.get("service", "Не выбрано")
-    user = data.get("user", {})
+    print("Данные из Mini App:", data)
 
-    first_name = user.get("first_name", "Без имени") if user else "Без имени"
-    username = user.get("username", "нет username") if user else "нет username"
-    user_id = user.get("id", message.from_user.id) if user else message.from_user.id
+    request_type = data.get("type")
+
+    if request_type != "request_accepted":
+        bot.send_message(message.chat.id, "Неизвестный тип запроса из Mini App")
+        return
+
+    action_title = data.get("actionTitle", "Не выбрано")
 
     client_message = (
-        "✅ Запрос принят.\n\n"
-        f"Выбранный раздел: {service}\n\n"
-        "⏳ Ожидание обработки: 48–56 часов.\n"
-        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки."
+        "✅ Запрос принят!\n\n\n"
+        f"Выбранный раздел: {action_title}\n\n\n"
+        "⏳ Ожидание обработки: 48–56 часов\n\n"
+        "Бот пришлет сообщение, после проверки🙏🏼\n\n"
+        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки"
     )
+
+    username = message.from_user.username
+    first_name = message.from_user.first_name or "Без имени"
+    user_id = message.from_user.id
+
+    if username:
+        username_text = f"@{username}"
+    else:
+        username_text = "нет username"
 
     admin_message = (
         "📡 Новый запрос из Mini App\n\n"
-        f"Выбранный раздел: {service}\n\n"
+        f"Выбранный раздел: {action_title}\n\n"
         f"Клиент: {first_name}\n"
-        f"Username: @{username}\n"
+        f"Username: {username_text}\n"
         f"Telegram ID: {user_id}"
     )
 

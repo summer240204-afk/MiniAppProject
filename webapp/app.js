@@ -8,6 +8,7 @@ const summaryScreen = document.getElementById("summaryScreen");
 
 const backBtn = document.getElementById("backBtn");
 const sendBtn = document.getElementById("sendBtn");
+const waitingBtn = document.getElementById("waitingBtn");
 
 const summaryIcon = document.getElementById("summaryIcon");
 const summaryTitle = document.getElementById("summaryTitle");
@@ -25,6 +26,7 @@ const successOverlay = document.getElementById("successOverlay");
 const successMessage = document.getElementById("successMessage");
 
 let selectedAction = null;
+let selectedActionKey = null;
 let typingAnimationTimer = null;
 
 const actions = {
@@ -69,6 +71,20 @@ const actions = {
     }
 };
 
+function getFinalMessage() {
+    if (!selectedAction) {
+        return "";
+    }
+
+    return (
+        "✅ Запрос принят!\n\n\n" +
+        "Выбранный раздел: " + selectedAction.title + "\n\n\n" +
+        "⏳ Ожидание обработки: 48–56 часов\n\n" +
+        "Бот пришлет сообщение, после проверки🙏🏼\n\n" +
+        "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки"
+    );
+}
+
 function stopTypingAnimation() {
     if (typingAnimationTimer) {
         clearTimeout(typingAnimationTimer);
@@ -94,7 +110,7 @@ function startTypingAnimation() {
         "ладно",
         "ладно, потом",
         "ладно, потом напишу",
-        "",
+        ""
     ];
 
     let phraseIndex = 0;
@@ -150,15 +166,9 @@ function startTypingAnimation() {
 document.querySelectorAll(".action-btn").forEach((button) => {
     button.addEventListener("click", () => {
         const key = button.dataset.key;
-        selectedAction = actions[key];
 
-        if (selectedAction.type === "typing") {
-            defaultExample.classList.add("typing-demo");
-            typingStatus.style.display = "block";
-        } else {
-            defaultExample.classList.remove("typing-demo");
-            typingStatus.style.display = "none";
-        }
+        selectedActionKey = key;
+        selectedAction = actions[key];
 
         stopTypingAnimation();
 
@@ -181,9 +191,11 @@ document.querySelectorAll(".action-btn").forEach((button) => {
 
         if (selectedAction.type === "typing") {
             defaultExample.classList.add("typing-demo");
+            typingStatus.style.display = "block";
             startTypingAnimation();
         } else {
             defaultExample.classList.remove("typing-demo");
+            typingStatus.style.display = "none";
         }
 
         choiceScreen.classList.add("hidden");
@@ -198,34 +210,12 @@ backBtn.addEventListener("click", () => {
     choiceScreen.classList.remove("hidden");
 });
 
-if (!sendBtn) {
-    console.error("Кнопка sendBtn не найдена");
-}
-
 sendBtn.addEventListener("click", () => {
     if (!selectedAction) {
-        tg.showAlert("Сначала выберите действие");
         return;
     }
 
-    const data = {
-        service: selectedAction.title,
-        theme: "Действия собеседника",
-        user: tg.initDataUnsafe.user || null
-    };
-
-    console.log("Отправляем данные в бота:", data);
-
-    tg.sendData(JSON.stringify(data));
-
-    stopTypingAnimation();
-
-    const finalMessage =
-        `✅ Запрос принят!\n\n\n` +
-        `Выбранный раздел: ${selectedAction.title}\n\n\n` +
-        `⏳ Ожидание обработки: 48–56 часов\n\n` +
-        `Бот пришлет сообщение, после проверки🙏🏼\n\n` +
-        `Пожалуйста, не отписывайтесь от спонсоров до завершения проверки`;
+    const finalMessage = getFinalMessage();
 
     if (successMessage) {
         successMessage.textContent = finalMessage;
@@ -236,4 +226,27 @@ sendBtn.addEventListener("click", () => {
     } else {
         tg.showAlert(finalMessage);
     }
+});
+
+waitingBtn.addEventListener("click", () => {
+    if (!selectedAction) {
+        return;
+    }
+
+    const finalMessage = getFinalMessage();
+
+    const data = {
+        type: "request_accepted",
+        actionKey: selectedActionKey,
+        actionTitle: selectedAction.title,
+        message: finalMessage
+    };
+
+    console.log("Отправляем данные в бота:", data);
+
+    tg.sendData(JSON.stringify(data));
+
+    stopTypingAnimation();
+
+    tg.close();
 });
