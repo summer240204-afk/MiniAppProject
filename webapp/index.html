@@ -47,39 +47,39 @@
                     </div>
                 </div>
 
-               <section class="actions">
-    <button class="action-btn" data-key="chatNick">
-        <span class="action-icon">👀</span>
-        <span>
-            <b>Ник активного чата</b>
-            <small>С кем человек сейчас в чате</small>
-        </span>
-    </button>
+                <section class="actions">
+                    <button class="action-btn" data-key="chatNick">
+                        <span class="action-icon">👀</span>
+                        <span>
+                            <b>Ник активного чата</b>
+                            <small>С кем человек сейчас в чате</small>
+                        </span>
+                    </button>
 
-    <button class="action-btn" data-key="chatEnter">
-        <span class="action-icon">🚪</span>
-        <span>
-            <b>Вход в ваш чат</b>
-            <small>Пуш-уведомление, что пользователь открыл чат с вами</small>
-        </span>
-    </button>
+                    <button class="action-btn" data-key="chatEnter">
+                        <span class="action-icon">🚪</span>
+                        <span>
+                            <b>Вход в ваш чат</b>
+                            <small>Пуш-уведомление, что пользователь открыл чат с вами</small>
+                        </span>
+                    </button>
 
-    <button class="action-btn" data-key="deletedMessage">
-        <span class="action-icon">🗑️</span>
-        <span>
-            <b>Удалённое сообщение</b>
-            <small>Пуш-уведомление с текстом удалённого сообщения</small>
-        </span>
-    </button>
+                    <button class="action-btn" data-key="deletedMessage">
+                        <span class="action-icon">🗑️</span>
+                        <span>
+                            <b>Удалённое сообщение</b>
+                            <small>Пуш-уведомление с текстом удалённого сообщения</small>
+                        </span>
+                    </button>
 
-    <button class="action-btn" data-key="liveTyping">
-        <span class="action-icon">⌨️</span>
-        <span>
-            <b>Живой набор текста</b>
-            <small>Видно, как набирается и стирается текст собеседником</small>
-        </span>
-    </button>
-</section>
+                    <button class="action-btn" data-key="liveTyping">
+                        <span class="action-icon">⌨️</span>
+                        <span>
+                            <b>Живой набор текста</b>
+                            <small>Видно, как набирается и стирается текст собеседником</small>
+                        </span>
+                    </button>
+                </section>
 
                 <p class="footer-text">
                     Нажмите на действие, чтобы открыть краткую сводку.
@@ -106,46 +106,47 @@
                     <p id="summaryView"></p>
                 </div>
 
-               <div class="phone-preview" id="phonePreview">
-    <div class="phone-screen">
-        <div class="phone-statusbar">
-            <span>9:41</span>
-            <span>📶 🔋</span>
-        </div>
+                <div class="phone-preview" id="phonePreview">
+                    <div class="phone-screen">
+                        <div class="phone-statusbar">
+                            <span>9:41</span>
+                            <span>📶 🔋</span>
+                        </div>
 
-        <div class="ios-notification">
-            <div class="ios-notification-top">
-                <div class="ios-app">
-                    <div class="ios-app-icon">✈️</div>
-                    <span>Telegram</span>
+                        <div class="ios-notification">
+                            <div class="ios-notification-top">
+                                <div class="ios-app">
+                                    <div class="ios-app-icon">✈️</div>
+                                    <span>Telegram</span>
+                                </div>
+                                <small>сейчас</small>
+                            </div>
+
+                            <div class="ios-notification-body">
+                                <b id="pushTitle">Telegram</b>
+                                <p id="pushText">Пример уведомления</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <small>сейчас</small>
-            </div>
 
-            <div class="ios-notification-body">
-                <b id="pushTitle">Telegram</b>
-                <p id="pushText">Пример уведомления</p>
-            </div>
-        </div>
-    </div>
-</div>
+                <div class="example-card" id="defaultExample">
+                    <div class="example-avatar"></div>
 
-<div class="example-card" id="defaultExample">
-    <div class="example-avatar"></div>
+                    <div class="example-content">
+                        <b id="exampleName">@username</b>
 
-    <div class="example-content">
-        <b id="exampleName">@username</b>
+                        <div class="telegram-typing-status" id="typingStatus">
+                            печатает<span class="typing-dots"></span>
+                        </div>
 
-        <div class="telegram-typing-status" id="typingStatus">
-            печатает<span class="typing-dots"></span>
-        </div>
+                        <p id="summaryExample">пример действия</p>
+                    </div>
+                </div>
 
-        <p id="summaryExample">пример действия</p>
-    </div>
-</div>
                 <button class="main-btn" id="sendBtn" type="button">
-    Согласиться и отправить запрос
-</button>
+                    Согласиться и отправить запрос
+                </button>
 
                 <p class="footer-text">
                     После отправки бот пришлёт статус ожидания обработки.
@@ -153,6 +154,16 @@
             </section>
         </main>
     </div>
+
+    <div id="successOverlay" class="success-overlay hidden">
+    <div class="success-card">
+        <p class="success-message" id="successMessage"></p>
+
+        <button class="waiting-button" type="button" disabled>
+            ⏳ Ожидание
+        </button>
+    </div>
+</div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="app.js"></script>

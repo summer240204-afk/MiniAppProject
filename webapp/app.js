@@ -1,4 +1,5 @@
 const tg = window.Telegram.WebApp;
+
 tg.ready();
 tg.expand();
 
@@ -14,13 +15,17 @@ const summaryMeaning = document.getElementById("summaryMeaning");
 const summaryView = document.getElementById("summaryView");
 const summaryExample = document.getElementById("summaryExample");
 const typingStatus = document.getElementById("typingStatus");
-let typingAnimationTimer = null;
+
 const phonePreview = document.getElementById("phonePreview");
 const defaultExample = document.getElementById("defaultExample");
 const pushTitle = document.getElementById("pushTitle");
 const pushText = document.getElementById("pushText");
 
+const successOverlay = document.getElementById("successOverlay");
+const successMessage = document.getElementById("successMessage");
+
 let selectedAction = null;
+let typingAnimationTimer = null;
 
 const actions = {
     chatNick: {
@@ -38,21 +43,21 @@ const actions = {
         type: "push",
         meaning: "Функция, где отправляется Пуш-уведомление сверху экрана, что пользователь открыл переписку именно с вами.",
         view: "Например, сверху экрана телефона появляется Пуш-уведомление: «@username зашёл в ваш чат».",
-         example: "@username зашёл в ваш чат",
+        example: "@username зашёл в ваш чат",
         pushTitle: "Вход в ваш чат",
         pushText: "@username только что открыл переписку с вами"
     },
 
     deletedMessage: {
-    title: "Удалённое сообщение",
-    icon: "🗑️",
-    type: "push",
-    meaning: "Функция, которая отправляет Пуш-уведомление сверху экрана, если пользователь написал сообщение, а потом удалил его для двоих.",
-    view: "Пример плашки: «@username удалил сообщение для двоих: “ладно, забудь…”».",
-    example: "@username удалил: «ладно, забудь…»",
-    pushTitle: "Удалённое сообщение",
-    pushText: "@username удалил сообщение для двоих: «ладно, забудь…»"
-},
+        title: "Удалённое сообщение",
+        icon: "🗑️",
+        type: "push",
+        meaning: "Функция, которая отправляет Пуш-уведомление сверху экрана, если пользователь написал сообщение, а потом удалил его для двоих.",
+        view: "Пример плашки: «@username удалил сообщение для двоих: “ладно, забудь…”».",
+        example: "@username удалил: «ладно, забудь…»",
+        pushTitle: "Удалённое сообщение",
+        pushText: "@username удалил сообщение для двоих: «ладно, забудь…»"
+    },
 
     liveTyping: {
         title: "Живой набор текста",
@@ -63,6 +68,7 @@ const actions = {
         example: "прив... привет... нет, удалил"
     }
 };
+
 function stopTypingAnimation() {
     if (typingAnimationTimer) {
         clearTimeout(typingAnimationTimer);
@@ -140,17 +146,19 @@ function startTypingAnimation() {
 
     animate();
 }
+
 document.querySelectorAll(".action-btn").forEach((button) => {
     button.addEventListener("click", () => {
         const key = button.dataset.key;
         selectedAction = actions[key];
+
         if (selectedAction.type === "typing") {
-    defaultExample.classList.add("typing-demo");
-    typingStatus.style.display = "block";
-} else {
-    defaultExample.classList.remove("typing-demo");
-    typingStatus.style.display = "none";
-}
+            defaultExample.classList.add("typing-demo");
+            typingStatus.style.display = "block";
+        } else {
+            defaultExample.classList.remove("typing-demo");
+            typingStatus.style.display = "none";
+        }
 
         stopTypingAnimation();
 
@@ -190,10 +198,6 @@ backBtn.addEventListener("click", () => {
     choiceScreen.classList.remove("hidden");
 });
 
-const tg = window.Telegram.WebApp;
-
-tg.ready();
-
 if (!sendBtn) {
     console.error("Кнопка sendBtn не найдена");
 }
@@ -214,7 +218,22 @@ sendBtn.addEventListener("click", () => {
 
     tg.sendData(JSON.stringify(data));
 
-    setTimeout(() => {
-        tg.close();
-    }, 300);
+    stopTypingAnimation();
+
+    const finalMessage =
+        `✅ Запрос принят!\n\n\n` +
+        `Выбранный раздел: ${selectedAction.title}\n\n\n` +
+        `⏳ Ожидание обработки: 48–56 часов\n\n` +
+        `Бот пришлет сообщение, после проверки🙏🏼\n\n` +
+        `Пожалуйста, не отписывайтесь от спонсоров до завершения проверки`;
+
+    if (successMessage) {
+        successMessage.textContent = finalMessage;
+    }
+
+    if (successOverlay) {
+        successOverlay.classList.remove("hidden");
+    } else {
+        tg.showAlert(finalMessage);
+    }
 });
