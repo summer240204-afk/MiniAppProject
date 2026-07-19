@@ -10,7 +10,7 @@ from telebot import types
 
 
 BOT_TOKEN = "8818731291:AAG98FHdORTQIxKhp1nBcmQNvc8QR3JQ_YA"
-WEBAPP_URL = "https://stirring-dango-b22f88.netlify.app"
+WEBAPP_URL = "https://dreamy-speculoos-1382f0.netlify.app"
 
 ADMIN_ID = 1244731064
 

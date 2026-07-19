@@ -4,147 +4,165 @@
     <meta charset="UTF-8">
     <title>Действия собеседника</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#06080f">
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="app">
-        <div class="glow glow-blue"></div>
-        <div class="glow glow-purple"></div>
-
-        <main class="card">
-            <section id="choiceScreen">
-                <header class="header">
-                    <div class="app-icon">
-                        <span>tg</span>
-                        <div class="live-dot"></div>
-                    </div>
-
-                    <div>
-                        <p class="eyebrow">Telegram Activity</p>
-                        <h1>Действия собеседника</h1>
-                    </div>
-                </header>
-
-                <p class="description">
-                    Push-уведомления о действиях собеседника в вашем личном чате.
-                </p>
-
-                <div class="status-preview">
-                    <div class="avatar"></div>
-
-                    <div class="status-info">
-                        <div class="status-top">
-                            <b>Собеседник</b>
-                            <span>online</span>
-                        </div>
-
-                        <p>
-                            <i></i><i></i><i></i>
-                            выполняет действие...
-                        </p>
-                    </div>
+        <div class="miniapp-shell">
+            <header class="miniapp-topbar">
+                <div class="miniapp-statusbar">
+                    <span class="miniapp-time">02:09</span>
+                    <span class="miniapp-status-icons">◫ ◫ ◫  14</span>
                 </div>
 
-                <section class="actions">
-                    <button class="action-btn" data-key="chatNick">
-                        <span class="action-icon">👀</span>
-                        <span>
-                            <b>Ник активного чата</b>
-                            <small>С кем человек сейчас в чате</small>
-                        </span>
-                    </button>
+                <div class="miniapp-nav">
+                    <button class="miniapp-close" type="button">Закрыть</button>
 
-                    <button class="action-btn" data-key="chatActions">
-                        <span class="action-icon">💬</span>
-                        <span>
-                            <b>Действия в чате</b>
-                            <small>Удалённые сообщения, скриншоты, пересылка и другие действия</small>
-                        </span>
-                    </button>
+                    <div class="miniapp-title-wrap">
+                        <div class="miniapp-title">Действия собеседника✈️</div>
+                        <div class="miniapp-subtitle">мини-приложение</div>
+                    </div>
 
-                    <button class="action-btn" data-key="liveTyping">
-                        <span class="action-icon">⌨️</span>
-                        <span>
-                            <b>Живой набор текста</b>
-                            <small>Видно, как набирается и стирается текст собеседником</small>
-                        </span>
-                    </button>
+                    <button class="miniapp-menu" type="button" aria-label="Меню">•••</button>
+                </div>
+            </header>
+
+            <main class="card">
+                <section id="choiceScreen">
+                    <header class="header">
+                        <div class="app-icon">
+                            <span>tg</span>
+                            <div class="live-dot"></div>
+                        </div>
+
+                        <div>
+                            <p class="eyebrow">Telegram Activity</p>
+                            <h1>Действия собеседника</h1>
+                        </div>
+                    </header>
+
+                    <p class="description">
+                        Push-уведомления о действиях собеседника в вашем личном чате.
+                    </p>
+
+                    <div class="status-preview">
+                        <div class="avatar"></div>
+
+                        <div class="status-info">
+                            <div class="status-top">
+                                <b>Собеседник</b>
+                                <span>online</span>
+                            </div>
+
+                            <p>
+                                <i></i><i></i><i></i>
+                                выполняет действие...
+                            </p>
+                        </div>
+                    </div>
+
+                    <section class="actions">
+                        <button class="action-btn" data-key="chatNick" type="button">
+                            <span class="action-icon">👀</span>
+                            <span>
+                                <b>Ник активного чата</b>
+                                <small>С кем человек сейчас в чате</small>
+                            </span>
+                        </button>
+
+                        <button class="action-btn" data-key="chatActions" type="button">
+                            <span class="action-icon">💬</span>
+                            <span>
+                                <b>Действия в чате</b>
+                                <small>Удалённые сообщения, скриншоты, пересылка и другие действия</small>
+                            </span>
+                        </button>
+
+                        <button class="action-btn" data-key="liveTyping" type="button">
+                            <span class="action-icon">⌨️</span>
+                            <span>
+                                <b>Живой набор текста</b>
+                                <small>Видно, как набирается и стирается текст собеседником</small>
+                            </span>
+                        </button>
+                    </section>
+
+                    <p class="footer-text">
+                        Нажмите на действие, чтобы открыть краткую сводку.
+                    </p>
                 </section>
 
-                <p class="footer-text">
-                    Нажмите на действие, чтобы открыть краткую сводку.
-                </p>
-            </section>
+                <section id="summaryScreen" class="hidden">
+                    <button class="back-btn" id="backBtn" type="button">
+                        ← Вернуться к выбору
+                    </button>
 
-            <section id="summaryScreen" class="hidden">
-                <button class="back-btn" id="backBtn">
-                    ← Вернуться к выбору
-                </button>
+                    <div class="summary-icon" id="summaryIcon">⌨️</div>
 
-                <div class="summary-icon" id="summaryIcon">⌨️</div>
+                    <p class="eyebrow">Краткая сводка</p>
+                    <h2 id="summaryTitle">Печатает сообщение</h2>
 
-                <p class="eyebrow">Краткая сводка</p>
-                <h2 id="summaryTitle">Печатает сообщение</h2>
+                    <div class="summary-box">
+                        <h3>Что это значит</h3>
+                        <p id="summaryMeaning"></p>
+                    </div>
 
-                <div class="summary-box">
-                    <h3>Что это значит</h3>
-                    <p id="summaryMeaning"></p>
-                </div>
+                    <div class="summary-box">
+                        <h3>Как это выглядит</h3>
+                        <p id="summaryView"></p>
+                    </div>
 
-                <div class="summary-box">
-                    <h3>Как это выглядит</h3>
-                    <p id="summaryView"></p>
-                </div>
+                    <div class="phone-preview" id="phonePreview">
+                        <div class="phone-screen">
+                            <div class="phone-statusbar">
+                                <span>9:41</span>
+                                <span>📶 🔋</span>
+                            </div>
 
-                <div class="phone-preview" id="phonePreview">
-                    <div class="phone-screen">
-                        <div class="phone-statusbar">
-                            <span>9:41</span>
-                            <span>📶 🔋</span>
-                        </div>
-
-                        <div class="ios-notification">
-                            <div class="ios-notification-top">
-                                <div class="ios-app">
-                                    <div class="ios-app-icon">✈️</div>
-                                    <span>Telegram</span>
+                            <div class="ios-notification">
+                                <div class="ios-notification-top">
+                                    <div class="ios-app">
+                                        <div class="ios-app-icon">✈️</div>
+                                        <span>Telegram</span>
+                                    </div>
+                                    <small>сейчас</small>
                                 </div>
-                                <small>сейчас</small>
-                            </div>
 
-                            <div class="ios-notification-body">
-                                <b id="pushTitle">Пользователь</b>
-                                <p id="pushText">Зашел(-а) в ваш личный чат</p>
+                                <div class="ios-notification-body">
+                                    <b id="pushTitle">Пользователь</b>
+                                    <p id="pushText">Зашел(-а) в ваш личный чат</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="example-card" id="defaultExample">
-                    <div class="example-avatar"></div>
+                    <div class="example-card" id="defaultExample">
+                        <div class="example-avatar"></div>
 
-                    <div class="example-content">
-                        <b id="exampleName">Пользователь</b>
+                        <div class="example-content">
+                            <b id="exampleName">Пользователь</b>
 
-                        <div class="telegram-typing-status" id="typingStatus">
-                            печатает<span class="typing-dots"></span>
+                            <div class="telegram-typing-status" id="typingStatus">
+                                печатает<span class="typing-dots"></span>
+                            </div>
+
+                            <p id="summaryExample">пример действия</p>
                         </div>
-
-                        <p id="summaryExample">пример действия</p>
                     </div>
-                </div>
 
-                <button class="main-btn" id="sendBtn" type="button">
-                    Согласиться и отправить запрос
-                </button>
+                    <button class="main-btn" id="sendBtn" type="button">
+                        Согласиться и отправить запрос
+                    </button>
 
-                <p class="footer-text">
-                    После отправки бот пришлёт статус ожидания обработки.
-                </p>
-            </section>
-        </main>
+                    <p class="footer-text">
+                        После отправки бот пришлёт статус ожидания обработки.
+                    </p>
+                </section>
+            </main>
+        </div>
     </div>
 
     <div id="successOverlay" class="success-overlay hidden">

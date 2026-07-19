@@ -1,7 +1,9 @@
-const tg = window.Telegram.WebApp;
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-tg.ready();
-tg.expand();
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
 
 const choiceScreen = document.getElementById("choiceScreen");
 const summaryScreen = document.getElementById("summaryScreen");
@@ -16,6 +18,7 @@ const summaryMeaning = document.getElementById("summaryMeaning");
 const summaryView = document.getElementById("summaryView");
 const summaryExample = document.getElementById("summaryExample");
 const typingStatus = document.getElementById("typingStatus");
+const exampleName = document.getElementById("exampleName");
 
 const phonePreview = document.getElementById("phonePreview");
 const defaultExample = document.getElementById("defaultExample");
@@ -26,7 +29,6 @@ const successOverlay = document.getElementById("successOverlay");
 const successMessage = document.getElementById("successMessage");
 
 let selectedAction = null;
-let selectedActionKey = null;
 let typingAnimationTimer = null;
 
 const actions = {
@@ -34,39 +36,28 @@ const actions = {
         title: "Ник активного чата",
         icon: "👀",
         type: "default",
-        meaning: "Функция, которая показывает снизу над именем пользователя ник того, с кем он прямо сейчас находится в чате",
-        view: "Примерно это выглядит как плашка сверху: «Сейчас в чате с @username».",
-        example: "сейчас в чате с @best_friend"
+        meaning: "Функция, которая показывает снизу под именем пользователя ник того, с кем он прямо сейчас находится в чате.",
+        view: "Это выглядит как плашка сверху: «Сейчас в чате с @username».",
+        example: "Сейчас в чате с @username."
     },
 
-    chatEnter: {
-        title: "Вход в ваш чат",
-        icon: "🚪",
+    chatActions: {
+        title: "Действия в чате",
+        icon: "💬",
         type: "push",
-        meaning: "Функция, где отправляется Пуш-уведомление сверху экрана, что пользователь открыл переписку именно с вами.",
-        view: "Например, сверху экрана телефона появляется Пуш-уведомление: «@username зашёл в ваш чат».",
-        example: "@username зашёл в ваш чат",
-        pushTitle: "Вход в ваш чат",
-        pushText: "@username только что открыл переписку с вами"
-    },
-
-    deletedMessage: {
-        title: "Удалённое сообщение",
-        icon: "🗑️",
-        type: "push",
-        meaning: "Функция, которая отправляет Пуш-уведомление сверху экрана, если пользователь написал сообщение, а потом удалил его для двоих.",
-        view: "Пример плашки: «@username удалил сообщение для двоих: “ладно, забудь…”».",
-        example: "@username удалил: «ладно, забудь…»",
-        pushTitle: "Удалённое сообщение",
-        pushText: "@username удалил сообщение для двоих: «ладно, забудь…»"
+        meaning: "Функция отправляет пуш-уведомления сверху экранна, чтобы вы сразу видели важные действия собеседника в вашем личном чате.",
+        view: "В уведомлениях будут отображаться действия собеседника: пересылка сообщений из вашего чата, вход в личный чат, блокировка/разблокировка, скриншот переписки и т.п.",
+        example: "Сделал(-а) скриншот вашей переписки",
+        pushTitle: "Пользователь",
+        pushText: "Сделал(-а) скриншот вашей переписки"
     },
 
     liveTyping: {
         title: "Живой набор текста",
         icon: "⌨️",
         type: "typing",
-        meaning: "Функция, где видно, как человек набирает и стирает текст у себя на телефоне.",
-        view: "Например, под статусом «печатает…» появляется строка с изменяющимся текстом: «прив…», «привет, я…», «нет, не буду писать».",
+        meaning: "Функция, где видно как человек набирает и стирает текст в вашем чате у себя на телефоне в реальном времени.",
+        view: "Например, под статусом «печатает…» появляется строка с изменяющимся текстом.",
         example: "прив... привет... нет, удалил"
     }
 };
@@ -80,7 +71,7 @@ function getFinalMessage() {
         "✅ Запрос принят!\n\n\n" +
         "Выбранный раздел: " + selectedAction.title + "\n\n\n" +
         "⏳ Ожидание обработки: 48–56 часов\n\n" +
-        "Бот пришлет сообщение, после проверки🙏🏼\n\n" +
+        "Бот пришлет сообщение после проверки🙏🏼\n\n" +
         "Пожалуйста, не отписывайтесь от спонсоров до завершения проверки"
     );
 }
@@ -90,6 +81,31 @@ function stopTypingAnimation() {
         clearTimeout(typingAnimationTimer);
         typingAnimationTimer = null;
     }
+}
+
+function resetPreviewState() {
+    phonePreview.classList.remove("active");
+    defaultExample.classList.remove("hidden");
+    defaultExample.classList.remove("typing-demo");
+    typingStatus.style.display = "none";
+}
+
+function showDefaultPreview(exampleText) {
+    phonePreview.classList.remove("active");
+    defaultExample.classList.remove("hidden");
+    defaultExample.classList.remove("typing-demo");
+    typingStatus.style.display = "none";
+    summaryExample.textContent = exampleText || "";
+}
+
+function showPushPreview(title, text) {
+    phonePreview.classList.add("active");
+    defaultExample.classList.add("hidden");
+    defaultExample.classList.remove("typing-demo");
+    typingStatus.style.display = "none";
+
+    pushTitle.textContent = title;
+    pushText.textContent = text;
 }
 
 function startTypingAnimation() {
@@ -166,11 +182,15 @@ function startTypingAnimation() {
 document.querySelectorAll(".action-btn").forEach((button) => {
     button.addEventListener("click", () => {
         const key = button.dataset.key;
-
-        selectedActionKey = key;
         selectedAction = actions[key];
 
+        if (!selectedAction) {
+            console.error("Не найден раздел для кнопки:", key);
+            return;
+        }
+
         stopTypingAnimation();
+        resetPreviewState();
 
         summaryIcon.textContent = selectedAction.icon;
         summaryTitle.textContent = selectedAction.title;
@@ -179,23 +199,14 @@ document.querySelectorAll(".action-btn").forEach((button) => {
         summaryExample.textContent = selectedAction.example;
 
         if (selectedAction.type === "push") {
-            phonePreview.classList.add("active");
-            defaultExample.classList.add("hidden");
-
-            pushTitle.textContent = selectedAction.pushTitle;
-            pushText.textContent = selectedAction.pushText;
-        } else {
-            phonePreview.classList.remove("active");
-            defaultExample.classList.remove("hidden");
-        }
-
-        if (selectedAction.type === "typing") {
+            showPushPreview(selectedAction.pushTitle, selectedAction.pushText);
+        } else if (selectedAction.type === "typing") {
+            showDefaultPreview(selectedAction.example);
             defaultExample.classList.add("typing-demo");
             typingStatus.style.display = "block";
             startTypingAnimation();
         } else {
-            defaultExample.classList.remove("typing-demo");
-            typingStatus.style.display = "none";
+            showDefaultPreview(selectedAction.example);
         }
 
         choiceScreen.classList.add("hidden");
@@ -223,15 +234,22 @@ sendBtn.addEventListener("click", () => {
 
     if (successOverlay) {
         successOverlay.classList.remove("hidden");
-    } else {
+    } else if (tg) {
         tg.showAlert(finalMessage);
+    } else {
+        alert(finalMessage);
     }
 });
 
 waitingBtn.addEventListener("click", () => {
     try {
         stopTypingAnimation();
-        tg.close();
+
+        if (tg) {
+            tg.close();
+        } else {
+            window.close();
+        }
     } catch (error) {
         console.error("Ошибка закрытия Mini App:", error);
         window.close();
